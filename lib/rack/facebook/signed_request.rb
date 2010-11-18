@@ -2,6 +2,10 @@ require 'openssl'
 require 'base64'
 require 'yajl'
 
+#
+# Gemified and borrowed heavily from Ole Riesenberg:
+# http://oleriesenberg.com/2010/07/22/facebook-graph-api-with-fbml-canvas-apps.html
+#
 module Rack
   module Facebook
     class SignedRequest
