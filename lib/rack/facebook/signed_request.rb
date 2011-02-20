@@ -22,7 +22,7 @@ module Rack
       def call(env)
         request = Rack::Request.new(env)
 
-        signed_request = request.params.delete('signed_request')
+        signed_request = request.params['signed_request']
         unless signed_request.nil?
           signature, signed_params = signed_request.split('.')
 
