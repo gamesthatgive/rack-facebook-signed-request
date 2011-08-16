@@ -1,9 +1,4 @@
-source :rubygems
+source "http://rubygems.org"
 
-gem 'yajl-ruby'
-gem 'rack'
-
-group :development do
-  gem 'jeweler'
-  gem 'rcov'
-end
+# Specify your gem's dependencies in ..gemspec
+gemspec
