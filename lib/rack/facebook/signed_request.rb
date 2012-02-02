@@ -16,23 +16,22 @@ module Rack
       end
 
       def call(env)
-        @env = env
         @request = Rack::Request.new(env)
-
         # RESTify the default POST request from Facebook
         if request.POST['signed_request']
-          env['HTTP_METHOD'] = 'GET'
-        end
+          env['REQUEST_METHOD'] = 'GET'
+          env['facebook.signed_request'] = request.POST['signed_request'] if request.POST['signed_request']
 
-        app_id, secret = [@options.fetch(:app_id), @options.fetch(:secret)]
-        facebook_params = resolve_from_signed_request!(secret) || resolve_from_cookie!(app_id, secret)
-        request.params['facebook_params'] = facebook_params if facebook_params
-        env['rack.request.query_hash'] = request.params
+          app_id, secret = [@options.fetch(:app_id), @options.fetch(:secret)]
+          facebook_params = resolve_from_signed_request!(secret) || resolve_from_cookie!(app_id, secret)
+          request.params['facebook_params'] = facebook_params if facebook_params
+          env['facebook.params'] = facebook_params if facebook_params
+        end
 
         unless @options[:inject_facebook]
           @app.call(env)
         else
-          inject_facebook_script
+          inject_facebook_script(env)
         end
       end
 
@@ -95,8 +94,8 @@ module Rack
         end
 
         # borrowed from Michael Bleigh's Rack Facebook_Connect for rewriting of the response body
-        def inject_facebook_script #:nodoc:
-          status, headers, responses = @app.call(@env)
+        def inject_facebook_script(env) #:nodoc:
+          status, headers, responses = @app.call(env)
           responses = Array(responses) unless responses.respond_to?(:each)
 
           if headers["Content-Type"] =~ %r{(text/html)|(application/xhtml+xml)}
