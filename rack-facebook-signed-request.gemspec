@@ -20,7 +20,7 @@ Gem::Specification.new do |s|
     "Gemfile",
     "Gemfile.lock",
     "LICENSE.txt",
-    "README",
+    "README.md",
     "Rakefile",
     "VERSION",
     "lib/rack-facebook-signed-request.rb",
@@ -78,4 +78,3 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<rcov>, [">= 0"])
   end
 end
-
