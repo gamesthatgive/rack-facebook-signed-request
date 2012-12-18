@@ -13,12 +13,13 @@ module Rack
         @app = app
         @condition = condition
         @options = options
+        @options[:hijack_signed_request] = true if @options[:hijack_signed_request].nil?
       end
 
       def call(env)
         @request = Rack::Request.new(env)
         # RESTify the default POST request from Facebook
-        if request.POST['signed_request']
+        if request.POST['signed_request'] && @options[:hijack_signed_request]
           env['REQUEST_METHOD'] = 'GET'
           env['facebook.signed_request'] = request.POST['signed_request'] if request.POST['signed_request']
 
