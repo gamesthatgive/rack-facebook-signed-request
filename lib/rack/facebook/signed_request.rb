@@ -102,7 +102,7 @@ module Rack
           if headers["Content-Type"] =~ %r{(text/html)|(application/xhtml+xml)}
             resp = []
             responses.each do |r|
-              r.sub! /(<html[^\/>]*)>/i, '\1 xmlns:fb="http://www.facebook.com/2008/fbml">'
+              r.gsub! /(<html[^\/>]*)>/i, '\1 xmlns:fb="http://www.facebook.com/2008/fbml">'
               r.sub! /<\/body>/i, <<-HTML
                 <div id="fb-root"></div>
                 <script>
