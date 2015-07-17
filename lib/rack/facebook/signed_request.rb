@@ -13,26 +13,26 @@ module Rack
         @app = app
         @condition = condition
         @options = options
+        @options[:hijack_signed_request] = true if @options[:hijack_signed_request].nil?
       end
 
       def call(env)
-        @env = env
         @request = Rack::Request.new(env)
-
         # RESTify the default POST request from Facebook
-        if request.POST['signed_request']
-          env['HTTP_METHOD'] = 'GET'
-        end
+        if request.POST['signed_request'] && @options[:hijack_signed_request]
+          env['REQUEST_METHOD'] = 'GET'
+          env['facebook.signed_request'] = request.POST['signed_request'] if request.POST['signed_request']
 
-        app_id, secret = [@options.fetch(:app_id), @options.fetch(:secret)]
-        facebook_params = resolve_from_signed_request!(secret) || resolve_from_cookie!(app_id, secret)
-        request.params['facebook_params'] = facebook_params if facebook_params
-        env['rack.request.query_hash'] = request.params
+          app_id, secret = [@options.fetch(:app_id), @options.fetch(:secret)]
+          facebook_params = resolve_from_signed_request!(secret) || resolve_from_cookie!(app_id, secret)
+          request.params['facebook_params'] = facebook_params if facebook_params
+          env['facebook.params'] = facebook_params if facebook_params
+        end
 
         unless @options[:inject_facebook]
           @app.call(env)
         else
-          inject_facebook_script
+          inject_facebook_script(env)
         end
       end
 
@@ -90,19 +90,19 @@ module Rack
         end
 
         def base64_url_decode(str)
-          str = str + "=" * (6 - str.size % 6) unless str.size % 6 == 0
-          return Base64.decode64(str.tr("-_", "+/"))
+          str += '=' * (4 * (str.length / 4.0).ceil - str.length)
+          Base64.decode64(str.tr("-_", "+/"))
         end
 
         # borrowed from Michael Bleigh's Rack Facebook_Connect for rewriting of the response body
-        def inject_facebook_script #:nodoc:
-          status, headers, responses = @app.call(@env)
+        def inject_facebook_script(env) #:nodoc:
+          status, headers, responses = @app.call(env)
           responses = Array(responses) unless responses.respond_to?(:each)
 
           if headers["Content-Type"] =~ %r{(text/html)|(application/xhtml+xml)}
             resp = []
             responses.each do |r|
-              r.sub! /(<html[^\/>]*)>/i, '\1 xmlns:fb="http://www.facebook.com/2008/fbml">'
+              r.gsub! /(<html[^\/>]*)>/i, '\1 xmlns:fb="http://www.facebook.com/2008/fbml">'
               r.sub! /<\/body>/i, <<-HTML
                 <div id="fb-root"></div>
                 <script>
